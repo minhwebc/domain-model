@@ -28,11 +28,74 @@ public struct Money {
   public var currency : String
   
   public func convert(_ to: String) -> Money {
+    if(to != "USD" && to != "GBP" && to != "EUR" && to != "CAN"){
+        print("There was an error!");
+    }
+    var result : Money = Money(amount: self.amount, currency: to);
+    if(self.currency == "USD"){
+        if(to == "GBP"){
+            result.currency = "GBP";
+            result.amount = self.amount / 2;
+        }else if(to == "EUR"){
+            result.currency = "EUR";
+            result.amount = Int(Double(self.amount) * 1.5);
+        }else{
+            result.currency = "CAN";
+            result.amount = Int(Double(self.amount) * 1.25);
+        }
+    }else if(self.currency == "GBP"){
+        if(to == "USD"){
+            result.currency = "USD";
+            result.amount = self.amount * 2;
+        }else if(to == "EUR"){
+            result.currency = "EUR";
+            result.amount = self.amount * (3);
+        }else{
+            result.currency = "CAN";
+            result.amount = Int(Double(self.amount) * 2.5);
+        }
+    }else if(self.currency == "EUR"){
+        if(to == "GBP"){
+            result.currency = "GBP";
+            result.amount = self.amount / 3;
+        }else if(to == "USD"){
+            result.currency = "USD";
+            result.amount = Int(Double(self.amount) * 2 / 3);
+        }else{
+            result.currency = "CAN";
+            result.amount = Int(Double(self.amount) * 4 / 5);
+        }
+    }else{
+        if(to == "GBP"){
+            result.currency = "GBP";
+            result.amount = Int(Double(self.amount) * 2 / 5);
+        }else if(to == "EUR"){
+            result.currency = "EUR";
+            result.amount = Int(Double(self.amount) *  6 / 5);
+        }else{
+            result.currency = "USD";
+            result.amount = Int(Double(self.amount) * 4 / 5);
+        }
+    }
+    return result;
   }
   
   public func add(_ to: Money) -> Money {
+    var result : Money = Money(amount: self.amount, currency: self.currency);
+    if(to.currency != self.currency){
+        result = convert(to.currency);
+    }
+    result.amount = result.amount + to.amount;
+    return result;
   }
+    
   public func subtract(_ from: Money) -> Money {
+    var result : Money = Money(amount: self.amount, currency: self.currency);
+    if(from.currency != self.currency){
+        result = convert(from.currency);
+    }
+    result.amount = result.amount - from.amount;
+    return result;
   }
 }
 
@@ -49,12 +112,29 @@ open class Job {
   }
   
   public init(title : String, type : JobType) {
+    self.title = title;
+    self.type = type;
   }
   
   open func calculateIncome(_ hours: Int) -> Int {
+    switch type {
+    case .Hourly(let hourlyIncome):
+        if(hours == 0){
+            return Int(hourlyIncome);
+        }
+        return Int(hourlyIncome * Double(hours));
+    case .Salary(let yearlyIncome):
+        return yearlyIncome;
+    }
   }
   
   open func raise(_ amt : Double) {
+    switch type {
+    case .Hourly(let hourlyIncome):
+        self.type = .Hourly(hourlyIncome + amt);
+    case .Salary(let yearlyIncome):
+        self.type = .Salary(yearlyIncome + Int(amt));
+    }
   }
 }
 
@@ -68,15 +148,25 @@ open class Person {
 
   fileprivate var _job : Job? = nil
   open var job : Job? {
-    get { }
+    get { return _job }
     set(value) {
+        if(age < 16){
+            _job = nil;
+        }else{
+            _job = value;
+        }
     }
   }
   
   fileprivate var _spouse : Person? = nil
   open var spouse : Person? {
-    get { }
+    get { return _spouse}
     set(value) {
+        if(age < 18){
+            _spouse = nil;
+        }else{
+            _spouse = value;
+        }
     }
   }
   
@@ -87,6 +177,7 @@ open class Person {
   }
   
   open func toString() -> String {
+    return "[Person: firstName:\(firstName) lastName:\(lastName) age:\(age) job:\(String(describing: _job)) spouse:\(String(describing: _spouse))]";
   }
 }
 
@@ -97,12 +188,29 @@ open class Family {
   fileprivate var members : [Person] = []
   
   public init(spouse1: Person, spouse2: Person) {
+    if(spouse1._spouse != nil || spouse2._spouse != nil){
+        return;
+    }
+    members.append(spouse1);
+    members.append(spouse2);
+    spouse1._spouse = spouse2;
+    spouse2._spouse = spouse1;
   }
   
   open func haveChild(_ child: Person) -> Bool {
+    members.append(child)
+    return true;
   }
   
   open func householdIncome() -> Int {
+    var sum : Int = 0;
+
+    for var person: Person in members{
+        if(person.job != nil){
+            sum += (person.job?.calculateIncome(2000))!
+        }
+    }
+    return sum;
   }
 }
 
